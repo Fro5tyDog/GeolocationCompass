@@ -3,41 +3,62 @@
 <head>
     <title>Point to a Direction Test</title>
     <script>
-        function getLocation() {
-            const info = document.getElementById("info");
-            if (navigator.geolocation) {
-                // Use watchPosition to continuously track location updates
-                navigator.geolocation.watchPosition(calculateArrowRotation, showError, {
-                    enableHighAccuracy: true,
-                    maximumAge: 0
-                });
-            } else {
-                info.innerHTML = "Geolocation is not supported by this browser.";
-            }
-        }   
+        let compassHeading = 0;
 
-        function calculateArrowRotation(location) {
-            // Get the phone’s real-time location
+        // Start watching location and listening for orientation changes
+        function startTracking() {
+            if (navigator.geolocation) {
+                // Start watching the device's location
+                navigator.geolocation.watchPosition(
+                    updateArrowDirection,
+                    showError,
+                    { enableHighAccuracy: true, maximumAge: 0 }
+                );
+
+                // Listen for device orientation changes (compass heading)
+                window.addEventListener("deviceorientationabsolute", updateCompassHeading, true);
+            } else {
+                document.getElementById("info").innerHTML = "Geolocation is not supported by this browser.";
+            }
+        }
+
+        // Update the compass heading from the device's orientation
+        function updateCompassHeading(event) {
+            // Use event.alpha to get the compass heading (in degrees)
+            compassHeading = event.alpha || 0;
+        }
+
+        function updateArrowDirection(location) {
+            // Get the phone’s current GPS coordinates
             const phoneLatitude = location.coords.latitude;
             const phoneLongitude = location.coords.longitude;
 
             // Destination coordinates (e.g., Musée du Louvre, Paris)
-            const destinationLatitude = 1.30864;
+            const destinationLatitude = 1.30864; 
             const destinationLongitude = 103.84955;
 
-            // Calculate the bearing angle
-            const arrowAngle = bearing(phoneLatitude, phoneLongitude, destinationLatitude, destinationLongitude);
+            // Calculate the bearing angle to the destination
+            const bearingToDestination = calculateBearing(phoneLatitude, phoneLongitude, destinationLatitude, destinationLongitude);
 
-            // Rotate the arrow
-            const element = document.getElementById('arrow');
-            element.style.transform = 'rotate(' + arrowAngle + 'deg)';
+            // Adjust the bearing with the current compass heading
+            const adjustedBearing = (bearingToDestination - compassHeading + 360) % 360;
+
+            // Rotate the arrow to the adjusted bearing
+            const arrow = document.getElementById('arrow');
+            arrow.style.transform = `rotate(${adjustedBearing}deg)`;
 
             // Display information
             const info = document.getElementById("info");
-            info.innerHTML = `Longitude = ${phoneLongitude}<br/>Latitude = ${phoneLatitude}<br/>Arrow angle = ${arrowAngle}`;
+            info.innerHTML = `
+                Longitude: ${phoneLongitude}<br>
+                Latitude: ${phoneLatitude}<br>
+                Compass Heading: ${compassHeading.toFixed(0)}<br>
+                Bearing to Destination: ${bearingToDestination.toFixed(0)}<br>
+                Arrow Angle: ${adjustedBearing.toFixed(0)}
+            `;
         }
 
-        function bearing(lat1, lng1, lat2, lng2) {
+        function calculateBearing(lat1, lng1, lat2, lng2) {
             const dLon = toRad(lng2 - lng1);
             lat1 = toRad(lat1);
             lat2 = toRad(lat2);
@@ -75,7 +96,7 @@
         }           
     </script>
 </head>
-<body onload="getLocation()">
+<body onload="startTracking()">
     <img id="map" src="map.png" style="position: absolute; top: 20px; left: 20px;">
     <img id="arrow" src="arrow.png" style="position: absolute; top: 8px; left: 105px; width: 150px; height: 150px;">
     <div id="info" style="position: absolute; top: 340px; left: 20px; font-family: sans-serif; font-size: 11px;"></div>       
