@@ -1,21 +1,83 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE HTML>
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <link rel="stylesheet" href="index.css">
+    <title>Point to a Direction Test</title>
+    <script>
+        function getLocation() {
+            const info = document.getElementById("info");
+            if (navigator.geolocation) {
+                // Use watchPosition to continuously track location updates
+                navigator.geolocation.watchPosition(calculateArrowRotation, showError, {
+                    enableHighAccuracy: true,
+                    maximumAge: 0
+                });
+            } else {
+                info.innerHTML = "Geolocation is not supported by this browser.";
+            }
+        }   
+
+        function calculateArrowRotation(location) {
+            // Get the phone’s real-time location
+            const phoneLatitude = location.coords.latitude;
+            const phoneLongitude = location.coords.longitude;
+
+            // Destination coordinates (e.g., Musée du Louvre, Paris)
+            const destinationLatitude = 1.30864;
+            const destinationLongitude = 103.84955;
+
+            // Calculate the bearing angle
+            const arrowAngle = bearing(phoneLatitude, phoneLongitude, destinationLatitude, destinationLongitude);
+
+            // Rotate the arrow
+            const element = document.getElementById('arrow');
+            element.style.transform = 'rotate(' + arrowAngle + 'deg)';
+
+            // Display information
+            const info = document.getElementById("info");
+            info.innerHTML = `Longitude = ${phoneLongitude}<br/>Latitude = ${phoneLatitude}<br/>Arrow angle = ${arrowAngle}`;
+        }
+
+        function bearing(lat1, lng1, lat2, lng2) {
+            const dLon = toRad(lng2 - lng1);
+            lat1 = toRad(lat1);
+            lat2 = toRad(lat2);
+            const y = Math.sin(dLon) * Math.cos(lat2);
+            const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+            const rad = Math.atan2(y, x);
+            const brng = toDeg(rad);
+            return (brng + 360) % 360;
+        }
+
+        function toRad(deg) {
+            return deg * Math.PI / 180;
+        }
+
+        function toDeg(rad) {
+            return rad * 180 / Math.PI;
+        }
+
+        function showError(error) {
+            const info = document.getElementById("info");
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    info.innerHTML = "User denied the request for Geolocation.";
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    info.innerHTML = "Location information is unavailable.";
+                    break;
+                case error.TIMEOUT:
+                    info.innerHTML = "The request to get user location timed out.";
+                    break;
+                case error.UNKNOWN_ERROR:
+                    info.innerHTML = "An unknown error occurred.";
+                    break;
+            }
+        }           
+    </script>
 </head>
-<body>
-
-    <div class="overview">
-        <div class="container">
-            <div class="arrow"></div>
-            <h1 class="h1">Compass</h1>
-        </div>
-    </div>
-
-
-    <script src="index.js"></script>
+<body onload="getLocation()">
+    <img id="map" src="map.png" style="position: absolute; top: 20px; left: 20px;">
+    <img id="arrow" src="arrow.png" style="position: absolute; top: 8px; left: 105px; width: 150px; height: 150px;">
+    <div id="info" style="position: absolute; top: 340px; left: 20px; font-family: sans-serif; font-size: 11px;"></div>       
 </body>
 </html>
