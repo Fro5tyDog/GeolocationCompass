@@ -45,11 +45,30 @@
         const arrow = document.querySelector('.arrow');
         const info = document.querySelector('.info');
 
+        const isIOS = !(
+            navigator.userAgent.match(/(iPod|iPhone|iPad)/) &&
+            navigator.userAgent.match(/AppleWebKit/)
+        );
+        if (isIOS) {
+            (DeviceOrientationEvent).requestPermission()
+                .then((response) => {
+                    if (response === "granted") {
+                        window.addEventListener("deviceorientation", this.receivedNewHeading, true);
+                    } else {
+                        alert("has to be allowed!");
+                    }
+                })
+                .catch(() => alert("not supported"));
+        } else {
+            window.addEventListener("deviceorientationabsolute", this.receivedNewHeading, true);
+        }
+
         navigator.geolocation.watchPosition((data) => {
             console.log(data);
             info.innerHTML = data.coords.latitude;
             info.innerHTML += data.coords.longitude;
             info.innerHTML += data.coords.heading;
+            arrow.style.transform =`rotate(${data.coords.heading}deg)`;
         })
     </script>
 </body>
