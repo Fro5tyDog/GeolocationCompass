@@ -50,13 +50,15 @@
         function startTracking() {
             // Start watching location and device orientation
             if (navigator.geolocation) {
+                // Use watchPosition to update the arrow based on location changes
                 navigator.geolocation.watchPosition(updateArrowDirection, showError, {
                     enableHighAccuracy: true,
                     maximumAge: 0,
                     timeout: 5000
                 });
-                
-                window.addEventListener("deviceorientationabsolute", updateCompassHeading, true);
+
+                // Listen for device orientation changes for compass heading
+                window.addEventListener("deviceorientation", updateCompassHeading, true);
             } else {
                 document.getElementById("info").innerHTML = "Geolocation is not supported by this browser.";
             }
@@ -64,8 +66,13 @@
 
         // Update the compass heading from device orientation
         function updateCompassHeading(event) {
-            // event.alpha gives us the compass heading in degrees
-            compassHeading = event.alpha || 0;
+            if (event.absolute || event.webkitCompassHeading !== undefined) {
+                // For devices with a compass heading, use webkitCompassHeading if available
+                compassHeading = event.webkitCompassHeading || 360 - event.alpha; // Invert alpha for correct rotation
+            } else {
+                // Otherwise use event.alpha (relative to the device orientation)
+                compassHeading = 360 - event.alpha;
+            }
         }
 
         // Update the arrow direction based on player's location and orientation
@@ -76,14 +83,14 @@
             // Calculate bearing from the player to the destination
             const bearingToDestination = calculateBearing(phoneLatitude, phoneLongitude, destinationLatitude, destinationLongitude);
 
-            // Adjust the arrow direction by combining bearing and compass heading
+            // Adjust the bearing with the current compass heading
             const adjustedBearing = (bearingToDestination - compassHeading + 360) % 360;
 
             // Rotate the arrow to point towards the target
             const arrow = document.getElementById('arrow');
             arrow.style.transform = `translate(-50%, -50%) rotate(${adjustedBearing}deg)`;
 
-            // Update info display
+            // Update info display for debugging
             document.getElementById("info").innerHTML = `
                 Longitude: ${phoneLongitude.toFixed(5)}<br>
                 Latitude: ${phoneLatitude.toFixed(5)}<br>
@@ -93,6 +100,7 @@
             `;
         }
 
+        // Calculate bearing between two GPS coordinates
         function calculateBearing(lat1, lng1, lat2, lng2) {
             const dLon = toRad(lng2 - lng1);
             lat1 = toRad(lat1);
