@@ -33,111 +33,24 @@
         }
     </style>
 </head>
-<body onload="startTracking()">
+<body>
 
     <div class="container">
         <div class="arrow" id="arrow"></div>
         <h1>Compass</h1>
     </div>
-    <div id="info" style="text-align:center; margin-top: 20px; font-family: Arial, sans-serif;"></div>
+    <div class="info" style="text-align:center; margin-top: 20px; font-family: Arial, sans-serif;"></div>
 
     <script>
-        // Target location coordinates
-        const destinationLatitude = 1.30864;
-        const destinationLongitude = 103.84955;
-        let compassHeading = 0;
+        const arrow = document.querySelector('.arrow');
+        const info = document.querySelector('.info');
 
-        function startTracking() {
-            // Start watching location and device orientation
-            if (navigator.geolocation) {
-                // Use watchPosition to update the arrow based on location changes
-                navigator.geolocation.watchPosition(updateArrowDirection, showError, {
-                    enableHighAccuracy: true,
-                    maximumAge: 0,
-                    timeout: 5000
-                });
-
-                // Listen for device orientation changes for compass heading
-                window.addEventListener("deviceorientation", updateCompassHeading, true);
-            } else {
-                document.getElementById("info").innerHTML = "Geolocation is not supported by this browser.";
-            }
-        }
-
-        // Update the compass heading from device orientation
-        function updateCompassHeading(event) {
-            if (event.absolute || event.webkitCompassHeading !== undefined) {
-                // For devices with a compass heading, use webkitCompassHeading if available
-                compassHeading = event.webkitCompassHeading || 360 - event.alpha; // Invert alpha for correct rotation
-            } else {
-                // Otherwise use event.alpha (relative to the device orientation)
-                compassHeading = 360 - event.alpha;
-            }
-        }
-
-        // Update the arrow direction based on player's location and orientation
-        function updateArrowDirection(location) {
-            const phoneLatitude = location.coords.latitude;
-            const phoneLongitude = location.coords.longitude;
-
-            // Calculate bearing from the player to the destination
-            const bearingToDestination = calculateBearing(phoneLatitude, phoneLongitude, destinationLatitude, destinationLongitude);
-
-            // Adjust the bearing with the current compass heading
-            const adjustedBearing = (bearingToDestination - compassHeading + 360) % 360;
-
-            // Rotate the arrow to point towards the target
-            const arrow = document.getElementById('arrow');
-            arrow.style.transform = `translate(-50%, -50%) rotate(${adjustedBearing}deg)`;
-
-            // Update info display for debugging
-            document.getElementById("info").innerHTML = `
-                Longitude: ${phoneLongitude.toFixed(5)}<br>
-                Latitude: ${phoneLatitude.toFixed(5)}<br>
-                Compass Heading: ${compassHeading.toFixed(0)}°<br>
-                Bearing to Target: ${bearingToDestination.toFixed(0)}°<br>
-                Arrow Angle: ${adjustedBearing.toFixed(0)}°
-            `;
-        }
-
-        // Calculate bearing between two GPS coordinates
-        function calculateBearing(lat1, lng1, lat2, lng2) {
-            const dLon = toRad(lng2 - lng1);
-            lat1 = toRad(lat1);
-            lat2 = toRad(lat2);
-
-            const y = Math.sin(dLon) * Math.cos(lat2);
-            const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
-            const rad = Math.atan2(y, x);
-            const brng = toDeg(rad);
-            return (brng + 360) % 360;
-        }
-
-        function toRad(deg) {
-            return deg * Math.PI / 180;
-        }
-
-        function toDeg(rad) {
-            return rad * 180 / Math.PI;
-        }
-
-        function showError(error) {
-            const info = document.getElementById("info");
-            switch(error.code) {
-                case error.PERMISSION_DENIED:
-                    info.innerHTML = "User denied the request for Geolocation.";
-                    break;
-                case error.POSITION_UNAVAILABLE:
-                    info.innerHTML = "Location information is unavailable.";
-                    break;
-                case error.TIMEOUT:
-                    info.innerHTML = "The request to get user location timed out.";
-                    break;
-                default:
-                    info.innerHTML = "An unknown error occurred.";
-                    break;
-            }
-        }
+        navigator.geolocation.watchPosition((data) => {
+            console.log(data);
+            info.innerHTML = data.coords.latitude;
+            info.innerHTML += data.coords.longitude;
+            info.innerHTML += data.coords.heading;
+        })
     </script>
 </body>
 </html>
