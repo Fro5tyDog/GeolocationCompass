@@ -5,7 +5,7 @@ async function startCompass() {
         const playerPosition = await getPlayerPosition();
 
         // Start updating the arrow direction
-        updateArrowUI(playerPosition, 1.308649149724571, 103.8495541458054);
+        updateArrowUI(playerPosition, 1.30864, 103.84955);
         requestAnimationFrame(startCompass);
     } catch (error) {
         console.error("Error fetching player position:", error);
