@@ -1,0 +1,27 @@
+.overview{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 35vh;
+}
+.container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 200px; /* Set the container size */
+    height: 200px;
+    background-color: green;
+    border-radius: 50%; /* Makes the container a circle */
+    overflow: hidden; /* Ensures content stays within the circle */
+    position: relative; /* Allows positioning of child elements like .arrow */
+}
+
+.arrow {
+    width: 50%; /* Adjust size as needed */
+    height: 50%;
+    background: url("https://p9n2c8y2.rocketcdn.me/wp-content/uploads/2021/05/24.png.webp") center no-repeat;
+    background-size: 100% 100%;
+    transform: rotate(0deg); /* Initial rotation */
+    transition: transform 0.5s ease; /* Smooth rotation */
+}
