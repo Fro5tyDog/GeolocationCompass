@@ -1,83 +1,128 @@
-// Start updating the compass
-function startCompass() {
-    // Start the recursive animation loop
-    function updateCompass() {
-        getPlayerPosition()
-            .then(playerPosition => {
-                // Target model's latitude and longitude
-                const modelLat = 1.308649149724571;
-                const modelLng = 103.8495541458054;
-                
-                // Update arrow UI with the latest player position and model position
-                updateArrowUI(playerPosition, modelLat, modelLng);
+// Start by fetching the player's position and updating the arrow direction repeatedly
+async function startCompass() {
+    try {
+        // Fetch the player's position once
+        const playerPosition = await getPlayerPosition();
 
-                // Schedule the next update
-                requestAnimationFrame(updateCompass);
-            })
-            .catch(error => {
-                console.error("Error fetching player position:", error);
-            });
+        // Start updating the arrow direction
+        updateArrowUI(playerPosition, 1.308649149724571, 103.8495541458054);
+        requestAnimationFrame(startCompass);
+    } catch (error) {
+        console.error("Error fetching player position:", error);
     }
-
-    // Start the loop
-    updateCompass();
 }
 
-function getPlayerPosition() {
+function getPlayerPosition(){
     return new Promise((resolve, reject) => {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
+        try{
+             if(navigator.geolocation){
+
+                const options = {
+                    enableHighAccuracy: true,
+                    maximumAge: 0,
+                  };
+                  
+                  function success(pos) {
+                    const position = pos.coords;
+                  
+                    console.log("Your current position is:");
+                    console.log(`Latitude : ${position.latitude}`);
+                    console.log(`Longitude: ${position.longitude}`);
+                    console.log(`More or less ${position.accuracy} meters.`);
+
                     const playerPos = {
-                        lat: pos.coords.latitude,
-                        lng: pos.coords.longitude,
+                        lat: position.latitude, 
+                        lng: position.longitude
                     };
                     resolve(playerPos);
-                },
-                (err) => {
+                  }
+                  
+                  function error(err) {
                     console.warn(`ERROR(${err.code}): ${err.message}`);
                     reject(err);
-                },
-                { enableHighAccuracy: true, maximumAge: 0 }
-            );
-        } else {
-            console.error("Geolocation is not supported by this browser.");
-            reject(new Error("Geolocation unsupported"));
-        }
-    });
+                  }
+
+                  navigator.geolocation.getCurrentPosition(success, error, options);
+                  
+             } else {
+                console.error("Geolocation is not supported by this browser.");
+                reject(false);
+             }
+        } 
+        catch(error){
+            reject(error);
+        }   
+    })
 }
+
 
 function updateArrowUI(playerPosition, modelLat, modelLng) {
-    // Calculate the bearing angle to rotate the arrow
-    const modelPos = { lat: modelLat, lng: modelLng };
-    const rotationAngle = calculateBearing(playerPosition, modelPos);
+    // Calculate the bearing and update the arrow rotation
+
+    // Point from here (Gare du Nord, Paris)
+    var phoneLatitude = playerPosition.lat;
+    var phoneLongitude = playerPosition.lng;
+
+    // Point to here (Musée du Louvre, Place du Carrousel, Paris, France)
+    var destinationLatitude =  modelLat;
+    var destinationLongitude = modelLng;
+
+    // const rotationAngle = calculateBearing(playerPosition, modelPos);
+    var arrowAngle = bearing(phoneLatitude, phoneLongitude, destinationLatitude, destinationLongitude);
 
     // Apply the rotation to the arrow
-    const arrow = document.querySelector(".arrow");
-    arrow.style.transform = `translate(-50%, -50%) rotate(${rotationAngle}deg)`;
+    // const arrow = document.querySelector(".arrow");
+    // arrow.style.transform = `translate(-50%, -50%) rotate(${rotationAngle}deg)`;
+
+    var element = document.querySelector('.arrow');
+    element.style['transform'] = 'rotate(' + arrowAngle + 'deg)';
+
+    // var info = document.querySelector(".h1");
+    // info.innerHTML = "Longitude = " + phoneLongitude + "<br/>Latitude = " + phoneLatitude + "<br/>Arrow angle = " + arrowAngle;
+    
 }
 
-function calculateBearing(playerPos, modelPos) {
-    const lat1 = toRadians(playerPos.lat);
-    const lat2 = toRadians(modelPos.lat);
-    const deltaLon = toRadians(modelPos.lng - playerPos.lng);
+// function calculateArrowRotation() {
+//     // Point from here (Arc de Triomph, Paris)
+//     // var phoneLatitude = 48.873934;
+//     // var phoneLongitude = 2.2949;
 
-    const y = Math.sin(deltaLon) * Math.cos(lat2);
-    const x = Math.cos(lat1) * Math.sin(lat2) - 
-              Math.sin(lat1) * Math.cos(lat2) * Math.cos(deltaLon);
-    const bearing = Math.atan2(y, x);
+//     // Point from here (Gare du Nord, Paris)
+//     // var phoneLatitude = 48.87977;
+//     // var phoneLongitude = 2.355752;
 
-    // Convert from radians to degrees and normalize between 0-360
-    return (toDegrees(bearing) + 360) % 360;
+//     // // Point to here (Musée du Louvre, Place du Carrousel, Paris, France)
+//     // var destinationLatitude =  48.861519;
+//     // var destinationLongitude = 2.3345495;
+
+//     var arrowAngle = bearing(phoneLatitude, phoneLongitude, destinationLatitude, destinationLongitude);
+
+//     var element = document.getElementById('arrow');
+//     element.style['transform'] = 'rotate(' + arrowAngle + 'deg)';
+
+//     var info = document.getElementById("info");
+//     info.innerHTML = "Longitude = " + phoneLongitude + "<br/>Latitude = " + phoneLatitude + "<br/>Arrow angle = " + arrowAngle;
+// }
+
+function bearing(lat1,lng1,lat2,lng2) {
+    var dLon = toRad(lng2-lng1);
+    lat1 = toRad(lat1);
+    lat2 = toRad(lat2);
+    var y = Math.sin(dLon) * Math.cos(lat2);
+    var x = Math.cos(lat1)*Math.sin(lat2) - Math.sin(lat1)*Math.cos(lat2)*Math.cos(dLon);
+    var rad = Math.atan2(y, x);
+    var brng = toDeg(rad);
+    return (brng + 360) % 360;
 }
 
-function toRadians(degrees) {
-    return degrees * (Math.PI / 180);
+function toRad(deg) {
+     return deg * Math.PI / 180;
 }
 
-function toDegrees(radians) {
-    return radians * (180 / Math.PI);
-}
+function toDeg(rad) {
+    return rad * 180 / Math.PI;
+}    
 
 // Initialize the compass rotation
 startCompass();
+
